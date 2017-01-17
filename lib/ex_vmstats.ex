@@ -187,5 +187,5 @@ defmodule ExVmstats do
   defp name_or_pid([], pid), do: pid
   defp name_or_pid(nil, pid), do: pid
   defp name_or_pid("", pid), do: pid
-  defp name_or_pid(name, _), do: name
+  defp name_or_pid(name, _), do: inspect(name)
 end
