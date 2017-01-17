@@ -57,14 +57,34 @@ defmodule ExVmstats do
     gauge_or_hist(state, :erlang.system_info(:process_limit), metric_name.("proc_limit"))
 
     # Messages in queues
+    process_infos = Enum.map(Process.list, fn pid ->
+      {inspect(pid), Process.info(pid, :message_queue_len), Process.info(pid, :registered_name)}
+    end)
+
     total_messages =
-      Enum.reduce Process.list, 0, fn pid, acc ->
-        case Process.info(pid, :message_queue_len) do
+      Enum.reduce process_infos, 0, fn {_pid, len, _name}, acc ->
+        case len do
           {:message_queue_len, count} -> count + acc
           _ -> acc
         end
       end
 
+    top_messages =
+      Enum.sort_by(process_infos, fn {_pid, len, _name} ->
+        case len do
+          {:message_queue_len, count} -> count * -1
+          _ -> 0
+        end
+      end)
+      |> Enum.take(5)
+
+    Enum.each(top_messages, fn {pid, len, name} ->
+      case len do
+        {:message_queue_len, count} -> gauge_or_hist(state, count, metric_name.("top_msgs_in_queues"), tags: ["proc_name:#{name_or_pid(pid, name)}"])
+        _ -> nil
+      end
+    end)
+      
     gauge_or_hist(state, total_messages, metric_name.("messages_in_queues"))
 
     # Modules loaded
@@ -137,10 +157,11 @@ defmodule ExVmstats do
     "#{namespace}.memory.#{metric}"
   end
 
-  defp gauge_or_hist(%__MODULE__{use_histogram: true, backend: backend}, value, metric) do
-    backend.histogram(value, metric)
+  defp gauge_or_hist(state, value, metrics, opts \\ [])
+  defp gauge_or_hist(%__MODULE__{use_histogram: true, backend: backend}, value, metric, opts) do
+    backend.histogram(value, metric, opts)
   end
-  defp gauge_or_hist(%__MODULE__{backend: backend}, value, metric), do: backend.gauge(value, metric)
+  defp gauge_or_hist(%__MODULE__{backend: backend}, value, metric, opts), do: backend.gauge(value, metric, opts)
 
   defp get_backend(:ex_statsd), do: ExVmstats.Backends.ExStatsD
   defp get_backend(backend), do: backend
@@ -162,4 +183,9 @@ defmodule ExVmstats do
       {i, new_active - prev_active, new_total - prev_total}
     end
   end
+
+  defp name_or_pid([], pid), do: pid
+  defp name_or_pid(nil, pid), do: pid
+  defp name_or_pid("", pid), do: pid
+  defp name_or_pid(name, _), do: name
 end

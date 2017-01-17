@@ -49,8 +49,9 @@ defmodule ExVmstatsTest do
     for regex <- @metric_regexes do
       assert match_count(regex, capture) == 1
     end
+    assert match_count(~r/top_msgs_in_queues/, capture) == 5
 
-    assert match_count(~r/(gauge|counter)/, capture) == @number_of_metrics
+    assert match_count(~r/(gauge|counter)/, capture) == @number_of_metrics + 5
   end
 
   test "two sets of stats are sent after two timeouts" do
@@ -61,8 +62,9 @@ defmodule ExVmstatsTest do
     for regex <- @metric_regexes do
       assert match_count(regex, capture) == 2
     end
+    assert match_count(~r/top_msgs_in_queues/, capture) == 10
 
-    assert match_count(~r/(gauge|counter)/, capture) == @number_of_metrics * 2
+    assert match_count(~r/(gauge|counter)/, capture) == @number_of_metrics * 2 + 10
   end
 
   test "use_histogram" do
@@ -72,7 +74,7 @@ defmodule ExVmstatsTest do
       run_and_terminate_server(600)
     end
 
-    assert match_count(~r/histogram/, capture) == 11
+    assert match_count(~r/histogram/, capture) == 16
     assert match_count(~r/gauge/, capture) == 0
 
     Application.put_env(:ex_vmstats, :use_histogram, false)
@@ -91,6 +93,14 @@ defmodule ExVmstatsTest do
     assert match_count(~r/scheduler_wall_time.(\d+)(.active|.total)/, capture) == scheduler_metric_count
 
     Application.put_env(:ex_vmstats, :sched_time, false)
+  end
+
+  test "sending stats with tags" do
+    capture = capture_log fn ->
+      run_and_terminate_server(600)
+    end
+
+    assert match_count(~r/tags:/, capture) == 5
   end
 
   defp match_count(regex, string) do
