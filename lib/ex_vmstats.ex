@@ -78,9 +78,9 @@ defmodule ExVmstats do
       end)
       |> Enum.take(5)
 
-    Enum.each(top_messages, fn {pid, len, name} ->
+    Enum.each(top_messages, fn {pid, len, {:registered_name, name}} ->
       case len do
-        {:message_queue_len, count} -> gauge_or_hist(state, count, metric_name.("top_msgs_in_queues"), tags: ["proc_name:#{name_or_pid(pid, name)}"])
+        {:message_queue_len, count} -> gauge_or_hist(state, count, metric_name.("top_msgs_in_queues"), tags: ["proc_name:#{name_or_pid(name, pid)}"])
         _ -> nil
       end
     end)
