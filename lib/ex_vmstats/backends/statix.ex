@@ -23,5 +23,5 @@ defmodule ExVmstats.Backends.Statix do
 end
 
 defmodule ExVmstats.Backends.Statix.Server do
-  use Statix
+  use Statix, runtime_config: true
 end
