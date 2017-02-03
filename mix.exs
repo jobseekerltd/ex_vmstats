@@ -35,7 +35,7 @@ defmodule ExVmstats.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:ex_statsd, "~> 0.5", optional: true}]
+    [{:ex_statsd, "~> 0.5", optional: true}, {:statix, "~> 1.0", optional: true}]
   end
 
   defp package do
