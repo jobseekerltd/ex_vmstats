@@ -164,6 +164,10 @@ defmodule ExVmstats do
   defp gauge_or_hist(%__MODULE__{backend: backend}, value, metric, opts), do: backend.gauge(value, metric, opts)
 
   defp get_backend(:ex_statsd), do: ExVmstats.Backends.ExStatsD
+  defp get_backend(:statix) do
+    :ok = ExVmstats.Backends.Statix.Server.connect
+    ExVmstats.Backends.Statix
+  end
   defp get_backend(backend), do: backend
 
   defp sched_time_available? do
