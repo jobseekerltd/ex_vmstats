@@ -19,7 +19,7 @@ defmodule ExVmstats.Backends.Statix do
 
   defp merge_opts(opts), do: Keyword.merge(opts, default_options, fn _k, v1, _v2 -> v1 end)
 
-  defp default_options, do: [sample_rate: 1, tags: []]
+  defp default_options, do: [sample_rate: 1.0, tags: []]
 end
 
 defmodule ExVmstats.Backends.Statix.Server do
