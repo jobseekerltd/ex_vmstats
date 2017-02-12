@@ -78,12 +78,7 @@ defmodule ExVmstats do
       end)
       |> Enum.take(5)
 
-    Enum.each(top_messages, fn {pid, len, {:registered_name, name}} ->
-      case len do
-        {:message_queue_len, count} -> gauge_or_hist(state, count, metric_name.("top_msgs_in_queues"), tags: ["proc_name:#{name_or_pid(name, pid)}"])
-        _ -> nil
-      end
-    end)
+    Enum.each(top_messages, fn m -> post_top_messages_stat(m, metric_name, state) end)
       
     gauge_or_hist(state, total_messages, metric_name.("messages_in_queues"))
 
@@ -185,6 +180,16 @@ defmodule ExVmstats do
   defp wall_time_diff(prev_sched, new_sched) do
     for {{i, prev_active, prev_total}, {i, new_active, new_total}} <- Enum.zip(prev_sched, new_sched) do
       {i, new_active - prev_active, new_total - prev_total}
+    end
+  end
+
+  defp post_top_messages_stat({pid, nil, nil}, _, _), do: nil
+  defp post_top_messages_stat({pid, nil, _}, _, _), do: nil
+  defp post_top_messages_stat({pid, _, nil}, _, _), do: nil
+  defp post_top_messages_stat({pid, len, {:registered_name, name}}, metric_name, state) do
+    case len do
+      {:message_queue_len, count} -> gauge_or_hist(state, count, metric_name.("top_msgs_in_queues"), tags: ["proc_name:#{name_or_pid(name, pid)}"])
+      _ -> nil
     end
   end
 
